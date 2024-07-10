@@ -216,40 +216,40 @@ const codeConfirmationGenerator = (length) => {
 
 
 app.post('/verify-email', async (req, res) => {
-  const { to} = req.body;
-  const code = codeConfirmationGenerator(6)
-  const subject = "Confirmation Code"
-  const text = "Your Confirmation Code was " + code
+  const { to } = req.body;
+  const code = codeConfirmationGenerator(6);
+  const subject = "Confirmation Code";
+  const text = "Your Confirmation Code is " + code;
 
   let transporter = nodemailer.createTransport({
-      host: 'smtp.office365.com',
-      port: 587,
-      secure: false, // true for 465, false for other ports
-      auth: {
-          user: 'info@attractgame.com',
-          pass: 'Korea@2101',
-      },
-      tls: {
-          ciphers: 'SSLv3'
-      }
+    host: 'smtp.office365.com',
+    port: 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+      user: 'info@attractgame.com',
+      pass: 'Korea@2101',
+    },
+    tls: {
+      ciphers: 'SSLv3'
+    }
   });
 
   try {
-      let info = await transporter.sendMail({
-          from: '"Attract Game" <info@attractgame.com>', // sender address
-          to: to,
-          subject: subject, 
-          text: text, 
-      });
+    let info = await transporter.sendMail({
+      from: '"Attract Game" <info@attractgame.com>', // sender address
+      to: to,
+      subject: subject,
+      text: text,
+    });
 
-      console.log('Message sent: %s', info.messageId);
-      res.status(200).send('Email sent successfully');
-      res.json(code)
+    console.log('Message sent: %s', info.messageId);
+    res.status(200).json({ message: 'Email sent successfully', code: code });
   } catch (error) {
-      console.error('Error sending email:', error);
-      res.status(500).send('Error sending email');
+    console.error('Error sending email:', error);
+    res.status(500).send('Error sending email');
   }
 });
+
 
 // Increase timeout settings
 const server = app.listen(4242, () => console.log("Node server listening on port 4242!"));
