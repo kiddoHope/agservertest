@@ -18,6 +18,9 @@ app.use(cors());
 // PayPal
 const REACT_APP_PAYPAL_CLIENT_ID = 'AbG0MUcovhrxJlymwu3xTjHje2b6skTcrGtfNOot0gDsNdw6aBBkuwqs5M_OD-XbQ0DE6kafCGslYOVd'
 const REACT_APP_PAYPAL_CLIENT_SECRET = 'ECaISBNP9EsDLDIpzVXsaiAcZQNm14o0JNQ021g0NsW15II41qXIrk1oDPL53M89VnbDG_VsdHYeegyL'
+
+const retrieveUsers = "https://engeenx.com/agUserList.php"
+
 const generateAccessToken = async () => {
   try {
     if (!REACT_APP_PAYPAL_CLIENT_ID || !REACT_APP_PAYPAL_CLIENT_SECRET) {
@@ -200,6 +203,62 @@ app.get("/success", (req, res) => {
 });
 
 
+
+const forgotPassCode = (length) => {
+  const charset = "1234567890";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    result += charset.charAt(randomIndex);
+  }
+  return result;
+};
+
+app.post("/forgot-acc-search", async (req, res) => {
+  const { email } = req.body;
+  try {
+    axios.get("https://engeenx.com/agUserEmails.php").then((response => {
+      const data = response.data
+      const user = data.filter(user => user.email === email)
+
+      const codePass = forgotPassCode(10)
+      const recoveryLink = "https://attractgame.com/forgot-password/recovery-code=" + codePass
+      const subject = "Forgot Password";
+      const text = "Your Recovery Link here: " + recoveryLink;
+
+      let transporter = nodemailer.createTransport({
+        host: 'smtp.office365.com',
+        port: 587,
+        secure: false, // true for 465, false for other ports
+        auth: {
+          user: 'info@attractgame.com',
+          pass: 'Korea@2101',
+        },
+        tls: {
+          ciphers: 'SSLv3'
+        }
+      });
+
+      if (user.length > 0) {
+        try {
+          let info = transporter.sendMail({
+            from: '"Attract Game" <info@attractgame.com>', // sender address
+            to: email,
+            subject: subject,
+            text: text,
+          });
+
+          res.status(200).json({ message: 'Email sent successfully', codePass: codePass});
+        } catch (error) {
+          console.error('Error sending email:', error);
+          res.status(500).send('Error sending email');
+        }
+      }
+    }))
+  } catch (error) {
+    res.json(error)
+  }
+});
 
 
   
