@@ -15,6 +15,10 @@ app.use(express.json());
 app.use(bodyParser.json());
 app.use(cors());
 
+app.use('/proxy', (req, res) => {
+  const url = 'https://gw.fraud.elavon.com' + req.url; // Forward to the Elavon server
+  req.pipe(request(url)).pipe(res); // Pipe the request and response
+});
 // PayPal
 const REACT_APP_PAYPAL_CLIENT_ID = 'AbG0MUcovhrxJlymwu3xTjHje2b6skTcrGtfNOot0gDsNdw6aBBkuwqs5M_OD-XbQ0DE6kafCGslYOVd'
 const REACT_APP_PAYPAL_CLIENT_SECRET = 'ECaISBNP9EsDLDIpzVXsaiAcZQNm14o0JNQ021g0NsW15II41qXIrk1oDPL53M89VnbDG_VsdHYeegyL'
