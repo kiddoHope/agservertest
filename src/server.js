@@ -289,8 +289,8 @@ app.post('/verify-email', async (req, res) => {
     port: 587,
     secure: false, // true for 465, false for other ports
     auth: {
-      user: 'info@attractgame.com',
-      pass: 'Korea@2101',
+      user: 'socialattractgame@gmail.com',
+      pass: 'Albert!!2713',
     },
     tls: {
       ciphers: 'SSLv3'
