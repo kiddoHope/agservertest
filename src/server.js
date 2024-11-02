@@ -13,6 +13,7 @@ const Confirmation = require('./confirm');
 require('@babel/register')({
   presets: ['@babel/preset-env', '@babel/preset-react'],
 });
+const app = express();
 
 app.use(cors({
     origin: 'https://attractgame.com', // Replace with your frontend URL
@@ -25,7 +26,6 @@ const { renderToStaticMarkup } = require('react-dom/server');
 
 const base = "https://api-m.sandbox.paypal.com";
 
-const app = express();
 
 const db = mysql.createPool({
   host: 'srv1388.hstgr.io',       // Your MySQL server host
