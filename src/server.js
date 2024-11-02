@@ -2,9 +2,21 @@ const express = require("express");
 const stripe = require("stripe")('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'); 
 const bodyParser = require("body-parser");
 const axios = require("axios");
+const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const path = require("path");
 const nodemailer = require('nodemailer');
+const EmailTemplate = require('./email');
+const Confirmation = require('./confirm');
+require('@babel/register')({
+  presets: ['@babel/preset-env', '@babel/preset-react'],
+});
+
+
+
+const React = require('react');
+const { renderToStaticMarkup } = require('react-dom/server');
+
 
 const base = "https://api-m.sandbox.paypal.com";
 
@@ -22,8 +34,8 @@ app.use('/proxy', (req, res) => {
 // PayPal
 const REACT_APP_PAYPAL_CLIENT_ID = 'AbG0MUcovhrxJlymwu3xTjHje2b6skTcrGtfNOot0gDsNdw6aBBkuwqs5M_OD-XbQ0DE6kafCGslYOVd'
 const REACT_APP_PAYPAL_CLIENT_SECRET = 'ECaISBNP9EsDLDIpzVXsaiAcZQNm14o0JNQ021g0NsW15II41qXIrk1oDPL53M89VnbDG_VsdHYeegyL'
+const jwtSecret = 'ngekNB082WjQXYBe182Q5p1CbBWc7uDS+S4Axf39zt+aobMcfT7WN4XMEkfzAFtT7TOwZGcGKEkdfRDvvSOV7A=='
 
-const retrieveUsers = "https://engeenx.com/agUserList.php"
 
 const generateAccessToken = async () => {
   try {
@@ -224,48 +236,54 @@ app.post("/forgot-acc-search", async (req, res) => {
     axios.get("https://engeenx.com/agUserEmails.php").then((response => {
       const data = response.data
       const user = data.filter(user => user.email === email)
+        
+        if (user.length > 0) {
+          
+          const userName = user[0].username
+          
+          const codePass = forgotPassCode(6)
+          const subject = "Forgot Password";
+          const htmlContent = renderToStaticMarkup(
+            React.createElement(EmailTemplate, { codePass,userName })
+          );
 
-      const codePass = forgotPassCode(10)
-      const recoveryLink = "https://attractgame.com/forgot-password/recovery-code=" + codePass
-      const subject = "Forgot Password";
-      const text = "Your Recovery Link here: " + recoveryLink;
+          
+          const jwtCode = jwt.sign({ codePass }, jwtSecret, { expiresIn: "7d" });
 
-      let transporter = nodemailer.createTransport({
-        host: 'smtp.office365.com',
-        port: 587,
-        secure: false, // true for 465, false for other ports
-        auth: {
-          user: 'info@attractgame.com',
-          pass: 'Korea@2101',
-        },
-        tls: {
-          ciphers: 'SSLv3'
-        }
-      });
-
-      if (user.length > 0) {
-        try {
-          let info = transporter.sendMail({
-            from: '"Attract Game" <info@attractgame.com>', // sender address
-            to: email,
-            subject: subject,
-            text: text,
+          let transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false, // true for 465, false for other ports
+            auth: {
+              user: 'attractgameinfo@gmail.com',
+              pass: 'xvdo luli mhwt qmok',
+            },
+            tls: {
+              ciphers: 'SSLv3',
+            }
           });
-
-          res.status(200).json({ message: 'Email sent successfully', codePass: codePass});
-        } catch (error) {
-          console.error('Error sending email:', error);
-          res.status(500).send('Error sending email');
+          try {
+            let info = transporter.sendMail({
+              from: '"Attract Game Support" <attractgameinfo@gmail.com>', // sender address
+              to: email,
+              subject: subject,
+              html: htmlContent, // use HTML version of the email
+            });
+            
+            res.status(200).json({ message: 'Email sent successfully', jtdcd: jwtCode});
+          } catch (error) {
+            console.error('Error sending email:', error);
+            res.status(500).send('Error sending email');
+          }
+        } else {
+          res.json({ message: 'Email not found'});
         }
-      }
     }))
   } catch (error) {
     res.json(error)
   }
 });
 
-
-  
 const codeConfirmationGenerator = (length) => {
   const charset = "1234567890";
   let result = "";
@@ -278,38 +296,61 @@ const codeConfirmationGenerator = (length) => {
 
 
 
+app.post("/change-password", async (req, res) => {
+  const {userData} = req.body
+  const jsonUser = JSON.stringify(userData)
+  axios
+    .post(`https://engeenx.com/agUpdateUserPass.php`,jsonUser)
+    .then((response) => {
+      console.log(response.data);
+      
+      res.status(200).json({ success: true, message: response.data.message});
+    })
+})
+
+
+
 app.post('/verify-email', async (req, res) => {
   const { to } = req.body;
-  const code = codeConfirmationGenerator(6);
-  const subject = "Confirmation Code";
-  const text = "Your Confirmation Code is " + code;
+  
+  if (to.length > 0) {
+    
+    const codePass = forgotPassCode(6)
+    const subject = "Verify Email";
+    const htmlContent = renderToStaticMarkup(
+      React.createElement(Confirmation, { codePass })
+    );
 
-  let transporter = nodemailer.createTransport({
-    host: 'smtp.office365.com',
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: 'socialattractgame@gmail.com',
-      pass: 'Albert!!2713',
-    },
-    tls: {
-      ciphers: 'SSLv3'
-    }
-  });
+    
+    const jwtCode = jwt.sign({ codePass }, jwtSecret, { expiresIn: "7d" });
 
-  try {
-    let info = await transporter.sendMail({
-      from: '"Attract Game" <info@attractgame.com>', // sender address
-      to: to,
-      subject: subject,
-      text: text,
+    let transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: 'attractgameinfo@gmail.com',
+        pass: 'xvdo luli mhwt qmok',
+      },
+      tls: {
+        ciphers: 'SSLv3',
+      }
     });
-
-    console.log('Message sent: %s', info.messageId);
-    res.status(200).json({ message: 'Email sent successfully', code: code });
-  } catch (error) {
-    console.error('Error sending email:', error);
-    res.status(500).send('Error sending email');
+    try {
+      let info = transporter.sendMail({
+        from: '"Attract Game Support" <attractgameinfo@gmail.com>', // sender address
+        to: to,
+        subject: subject,
+        html: htmlContent, // use HTML version of the email
+      });
+      
+      res.status(200).json({ message: 'Email sent successfully', jtdcd: jwtCode});
+    } catch (error) {
+      console.error('Error sending email:', error);
+      res.status(500).send('Error sending email');
+    }
+  } else {
+    res.json({ message: 'Email not found'});
   }
 });
 
