@@ -284,34 +284,27 @@ app.post("/forgot-acc-search", async (req, res) => {
   }
 });
 
-const codeConfirmationGenerator = (length) => {
-  const charset = "1234567890";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * charset.length);
-    result += charset.charAt(randomIndex);
-  }
-  return result;
-};
-
-
 
 app.post("/change-password", async (req, res) => {
   const {userData} = req.body
-  const jsonUser = JSON.stringify(userData)
-  axios
-    .post(`https://engeenx.com/agUpdateUserPass.php`,jsonUser,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    )
-    .then((response) => {
-      console.log(response.data);
-      
-      res.status(200).json({ success: true, message: response.data.message});
-    })
+  fetch('https://engeenx.com/agUpdateUserPass.php', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(userData),
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success === true) {
+      res.status(200).json({ success: true, message: data.message});
+    } else {
+      setMessageResponse(data.message);
+    }
+  })
+  .catch((error) => {
+    res.status(500).json({success:false, message: error.data.message})
+  });
 })
 
 
