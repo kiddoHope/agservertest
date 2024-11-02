@@ -15,6 +15,11 @@ require('@babel/register')({
 });
 
 
+const cors = require('cors');
+app.use(cors({
+    origin: 'https://attractgame.com', // Replace with your frontend URL
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // List allowed methods
+}));
 
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
