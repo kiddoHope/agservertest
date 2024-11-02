@@ -313,6 +313,8 @@ app.post("/forgot-acc-search", async (req, res) => {
 app.post("/change-password", async (req, res) => {
   try {
     const { userEmail, newPassword } = req.body.userData;
+    console.log(userEmail, newPassword);
+    
 
     // Check if required data is provided
     if (!userEmail || !newPassword) {
