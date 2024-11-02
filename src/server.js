@@ -16,9 +16,10 @@ require('@babel/register')({
 const app = express();
 
 app.use(cors({
-    origin: 'https://attractgame.com', // Replace with your frontend URL
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // List allowed methods
+  origin: 'https://attractgame.com', // Your frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed methods
 }));
+
 
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
@@ -313,7 +314,7 @@ app.post("/forgot-acc-search", async (req, res) => {
 });
 
 
-app.post("/change-password", async (req, res) => {
+app.post("/api/change-password", async (req, res) => {
   try {
     const { userEmail, newPassword } = req.body.userData;
     console.log(userEmail, newPassword);
