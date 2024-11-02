@@ -300,7 +300,13 @@ app.post("/change-password", async (req, res) => {
   const {userData} = req.body
   const jsonUser = JSON.stringify(userData)
   axios
-    .post(`https://engeenx.com/agUpdateUserPass.php`,jsonUser)
+    .post(`https://engeenx.com/agUpdateUserPass.php`,jsonUser,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    )
     .then((response) => {
       console.log(response.data);
       
