@@ -2,6 +2,8 @@ const express = require("express");
 const stripe = require("stripe")('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'); 
 const bodyParser = require("body-parser");
 const axios = require("axios");
+const mysql = require('mysql2/promise')
+const bcrypt = require('bcrypt')
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const path = require("path");
@@ -21,6 +23,29 @@ const { renderToStaticMarkup } = require('react-dom/server');
 const base = "https://api-m.sandbox.paypal.com";
 
 const app = express();
+
+const db = mysql.createPool({
+  host: 'srv1388.hstgr.io',       // Your MySQL server host
+  user: 'u350266280_koswidatasetup',            // Your MySQL username
+  password: 'Koswi0124$',            // Your MySQL password
+  database: 'u350266280_agdatabase',    // Your database name
+  waitForConnections: true,
+  connectTimeout: 20000, // Increase to 20 seconds
+  port: 3306,                // Default MySQL port
+  connectionLimit: 10,     // Maximum number of connections in the pool
+  queueLimit: 0            // Unlimited queueing for connections
+});
+
+async function testConnection() {
+  try {
+    const connection = await db.getConnection();
+    console.log('Database connection successful!');
+    connection.release(); // Release the connection back to the pool
+  } catch (error) {
+    console.error('Database connection failed:', error.message);
+  }
+}
+testConnection();
 
 app.use(express.static("client"));
 app.use(express.json());
@@ -286,26 +311,38 @@ app.post("/forgot-acc-search", async (req, res) => {
 
 
 app.post("/change-password", async (req, res) => {
-  const {userData} = req.body
-  fetch('https://engeenx.com/agUpdateUserPass.php', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(userData),
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success === true) {
-      res.status(200).json({ success: true, message: data.message});
-    } else {
-      setMessageResponse(data.message);
+  try {
+    const { userEmail, newPassword } = req.body.userData;
+
+    // Check if required data is provided
+    if (!userEmail || !newPassword) {
+      return res.status(400).json({ success: false, message: 'User email and password are required' });
     }
-  })
-  .catch((error) => {
-    res.status(500).json({success:false, message: error.data.message})
-  });
-})
+
+    // Check if the user exists
+    const [userRows] = await db.query('SELECT * FROM ag_credentials WHERE email = ?', [userEmail]);
+    if (userRows.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the password in the database
+    const updatePasswordSql = 'UPDATE ag_credentials SET password = ?, epassword = ? WHERE email = ?';
+    const [updateResult] = await db.query(updatePasswordSql, [newPassword, hashedPassword, userEmail]);
+
+    if (updateResult.affectedRows > 0) {
+      res.status(200).json({ success: true, message: 'Password updated successfully' });
+    } else {
+      res.status(500).json({ success: false, message: 'Failed to update password' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: error.message || 'An error occurred' });
+  }
+});
+
 
 
 
